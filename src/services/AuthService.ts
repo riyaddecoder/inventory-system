@@ -7,14 +7,14 @@ import { env } from '../config/env';
 export class AuthService {
   private userRepository = AppDataSource.getRepository(User);
 
-  async register(email: string, password: string): Promise<User> {
+  async register(email: string, password: string, role: string = 'customer'): Promise<User> {
     const existingUser = await this.userRepository.findOne({ where: { email } });
     if (existingUser) {
       throw new Error('User already exists');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = this.userRepository.create({ email, password: hashedPassword });
+    const user = this.userRepository.create({ email, password: hashedPassword, role });
     return await this.userRepository.save(user);
   }
 

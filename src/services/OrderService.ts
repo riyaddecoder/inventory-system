@@ -44,23 +44,27 @@ export class OrderService {
       const orderItems: OrderItem[] = [];
 
       for (const item of payload.items) {
-        // Pessimistic Write Lock: SELECT ... FOR UPDATE
-        const product = await queryRunner.manager.createQueryBuilder(Product, 'product')
-          .setLock('pessimistic_write')
-          .leftJoinAndSelect('product.inventory', 'inventory')
-          .where('product.id = :id', { id: item.productId })
-          .getOne();
-
+        const product = await queryRunner.manager.findOne(Product, { where: { id: item.productId } });
         if (!product) {
           throw new Error(`Product ${item.productId} not found`);
         }
 
-        if (product.inventory.quantity < item.quantity) {
+        // Pessimistic Write Lock: SELECT ... FOR UPDATE on Inventory
+        const inventory = await queryRunner.manager.createQueryBuilder(Inventory, 'inventory')
+          .setLock('pessimistic_write')
+          .where('inventory.productId = :productId', { productId: item.productId })
+          .getOne();
+
+        if (!inventory) {
+          throw new Error(`Inventory for product ${product.name} not found`);
+        }
+
+        if (inventory.quantity < item.quantity) {
           throw new Error(`Insufficient stock for product ${product.name}`);
         }
 
-        product.inventory.quantity -= item.quantity;
-        await queryRunner.manager.save(product.inventory);
+        inventory.quantity -= item.quantity;
+        await queryRunner.manager.save(inventory);
 
         totalAmount += Number(product.price) * item.quantity;
 

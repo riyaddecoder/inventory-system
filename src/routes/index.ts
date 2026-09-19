@@ -55,11 +55,19 @@ router.get('/', (req, res) => {
  *             properties:
  *               email:
  *                 type: string
+ *                 example: user@example.com
  *               password:
  *                 type: string
+ *                 example: password123
+ *               role:
+ *                 type: string
+ *                 enum: [customer, admin]
+ *                 default: customer
  *     responses:
  *       201:
- *         description: User created
+ *         description: User created successfully
+ *       400:
+ *         description: Validation failed
  *       409:
  *         description: User already exists
  */
@@ -541,7 +549,11 @@ router.patch('/inventory/:productId', authenticate, authorize(['admin']), invent
  *                       type: integer
  *     responses:
  *       201:
- *         description: Order created
+ *         description: Order created successfully
+ *       400:
+ *         description: Validation failed
+ *       401:
+ *         description: Unauthorized
  *       409:
  *         description: Insufficient stock
  */
@@ -627,6 +639,14 @@ router.get('/orders/:id', authenticate, orderController.getOrder);
  *     responses:
  *       200:
  *         description: Order cancelled and stock restored
+ *       400:
+ *         description: Order is already cancelled or cannot be cancelled
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (cannot cancel another user's order)
+ *       404:
+ *         description: Order not found
  */
 router.patch('/orders/:id/cancel', authenticate, orderController.cancelOrder);
 

@@ -132,10 +132,9 @@ To guarantee that inventory is never oversold under high concurrent request volu
 1. **Pessimistic Write Locking (`SELECT ... FOR UPDATE`)**:
    During order checkout, the inventory row for each requested item is locked:
    ```typescript
-   const product = await queryRunner.manager.createQueryBuilder(Product, 'product')
+   const inventory = await queryRunner.manager.createQueryBuilder(Inventory, 'inventory')
      .setLock('pessimistic_write')
-     .leftJoinAndSelect('product.inventory', 'inventory')
-     .where('product.id = :id', { id: item.productId })
+     .where('inventory.productId = :productId', { productId: item.productId })
      .getOne();
    ```
 2. **SERIALIZABLE Transaction Isolation**:
@@ -204,9 +203,15 @@ OpenAPI / Swagger interactive documentation is accessible at:
 
 ### Sample Endpoints:
 
-#### 1. Register User
+#### 1. Register User & Login
 ```bash
+# Register as customer (or admin)
 curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email": "customer@example.com", "password": "securepassword123", "role": "customer"}'
+
+# Login to retrieve JWT
+curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email": "customer@example.com", "password": "securepassword123"}'
 ```
@@ -216,13 +221,39 @@ curl -X POST http://localhost:3000/api/auth/register \
   "message": "User created",
   "user": {
     "id": "c71a39f6-0797-4b7b-8321-7f9754f9a56e",
-    "email": "customer@example.com"
+    "email": "customer@example.com",
+    "role": "customer"
   }
 }
 ```
 
-#### 2. Search & Filter Products
+#### 2. Category Management (CRUD & Caching)
 ```bash
+# Create Category (Admin)
+curl -X POST http://localhost:3000/api/categories \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Electronics", "description": "Gadgets, audio and accessories"}'
+
+# List Categories (Cached)
+curl -X GET http://localhost:3000/api/categories
+```
+
+#### 3. Search & Filter Products
+```bash
+# Create Product with initial stock (Admin)
+curl -X POST http://localhost:3000/api/products \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Wireless Noise Cancelling Headphones",
+    "description": "Premium over-ear wireless headphones with active noise cancellation",
+    "price": 199.99,
+    "categoryId": "<CATEGORY_UUID>",
+    "initialQuantity": 50
+  }'
+
+# Search & Filter Products
 curl -X GET "http://localhost:3000/api/products?q=wireless&inStock=true&sortBy=price&sortOrder=ASC&page=1&limit=10"
 ```
 *Response (`200 OK`)*:
@@ -234,7 +265,7 @@ curl -X GET "http://localhost:3000/api/products?q=wireless&inStock=true&sortBy=p
       "name": "Wireless Noise Cancelling Headphones",
       "description": "Premium over-ear wireless headphones with active noise cancellation",
       "price": 199.99,
-      "inventory": { "quantity": 45, "lowStockThreshold": 5 }
+      "inventory": { "quantity": 50, "lowStockThreshold": 5 }
     }
   ],
   "pagination": {
@@ -246,7 +277,23 @@ curl -X GET "http://localhost:3000/api/products?q=wireless&inStock=true&sortBy=p
 }
 ```
 
-#### 3. Create Order (Idempotent)
+#### 4. Inventory Tracking & Restock
+```bash
+# Check Real-Time Availability
+curl -X GET http://localhost:3000/api/inventory/<PRODUCT_UUID>
+
+# Restock inventory (Admin - holding pessimistic lock)
+curl -X PATCH http://localhost:3000/api/inventory/<PRODUCT_UUID> \
+  -H "Authorization: Bearer <ADMIN_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"restockAmount": 25}'
+
+# Query Low Stock Alerts (Admin)
+curl -X GET http://localhost:3000/api/inventory/low-stock \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
+
+#### 5. Create Order (Idempotent)
 ```bash
 curl -X POST http://localhost:3000/api/orders \
   -H "Authorization: Bearer <TOKEN>" \
@@ -264,7 +311,7 @@ curl -X POST http://localhost:3000/api/orders \
 }
 ```
 
-#### 4. Cancel Order (Restores Stock)
+#### 6. Cancel Order (Restores Stock)
 ```bash
 curl -X PATCH http://localhost:3000/api/orders/e8499de7-a169-42b7-8db1-c5291b53bc1a/cancel \
   -H "Authorization: Bearer <TOKEN>"
@@ -280,7 +327,7 @@ curl -X PATCH http://localhost:3000/api/orders/e8499de7-a169-42b7-8db1-c5291b53b
 }
 ```
 
-#### 5. Sales Analytics & Reporting (Admin)
+#### 7. Sales Analytics & Reporting (Admin)
 ```bash
 curl -X GET http://localhost:3000/api/reports/sales \
   -H "Authorization: Bearer <ADMIN_TOKEN>"
@@ -306,9 +353,14 @@ curl -X GET http://localhost:3000/api/reports/sales \
 
 ## Testing
 
-The project includes an automated integration test suite covering authentication, duplicate error handling (409 Conflict), order idempotency, inventory tracking, concurrency isolation, and cancellation stock restoration.
-
-To execute the test suite:
+### Automated Unit & Integration Tests
+Runs the built-in Node.js / tsx test runner verifying authentication, duplicate validation (409 Conflict), order idempotency, inventory locks, concurrency isolation, and cancellation stock restoration:
 ```bash
 npm test
+```
+
+### End-to-End (E2E) Curl Test Suite
+Executes a comprehensive shell script testing 25+ real scenarios via `curl` against the live HTTP server:
+```bash
+./scripts/e2e-test.sh
 ```
