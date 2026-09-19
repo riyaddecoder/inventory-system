@@ -8,7 +8,7 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
   if (err instanceof ZodError) {
     return res.status(StatusCodes.BAD_REQUEST).json({
       message: 'Validation failed',
-      errors: err.errors
+      errors: err.issues
     });
   }
 

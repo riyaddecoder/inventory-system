@@ -98,14 +98,14 @@ export class OrderService {
   async getOrder(id: string) {
     return AppDataSource.getRepository(Order).findOne({
       where: { id },
-      relations: ['items', 'items.product']
+      relations: { items: { product: true } }
     });
   }
 
   async getUserOrders(userId: string) {
     return AppDataSource.getRepository(Order).find({
       where: { user: { id: userId } },
-      relations: ['items', 'items.product'],
+      relations: { items: { product: true } },
       order: { createdAt: 'DESC' }
     });
   }

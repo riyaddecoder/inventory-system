@@ -32,7 +32,7 @@ export class OrderController {
 
   async getOrder(req: Request, res: Response, next: NextFunction) {
     try {
-      const order = await orderService.getOrder(req.params.id);
+      const order = await orderService.getOrder(req.params.id as string);
       if (!order) return res.status(404).json({ message: 'Order not found' });
       
       // Ensure user owns the order or is admin (assuming simple check for now)
