@@ -135,6 +135,7 @@ describe('Assessment 2 - High-Performance Order Processing & Inventory API Tests
     assert.ok(swaggerSpec.paths['/api/inventory/{productId}']);
     assert.ok(swaggerSpec.paths['/api/reports/sales']);
     assert.ok(swaggerSpec.paths['/api/reports/top-products']);
+    assert.ok(swaggerSpec.paths['/api/reports/categories']);
   });
 
   /* =========================================================================

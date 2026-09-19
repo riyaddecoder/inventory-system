@@ -56,8 +56,8 @@ export class ReportService {
       .where('order.status != :cancelled', { cancelled: OrderStatus.CANCELLED })
       .select('product.id', 'productId')
       .addSelect('product.name', 'productName')
-      .addSelect('SUM(item.quantity)', 'totalQuantitySold')
-      .addSelect('SUM(item.quantity * item.price)', 'totalRevenue')
+      .addSelect('COALESCE(SUM(item.quantity), 0)', 'totalQuantitySold')
+      .addSelect('COALESCE(SUM(item.quantity * item.price), 0)', 'totalRevenue')
       .groupBy('product.id')
       .addGroupBy('product.name')
       .orderBy('SUM(item.quantity)', 'DESC')
@@ -67,8 +67,8 @@ export class ReportService {
     return result.map(r => ({
       productId: r.productId,
       productName: r.productName,
-      totalQuantitySold: parseInt(r.totalQuantitySold, 10),
-      totalRevenue: parseFloat(parseFloat(r.totalRevenue).toFixed(2))
+      totalQuantitySold: parseInt(r.totalQuantitySold || '0', 10),
+      totalRevenue: parseFloat(parseFloat(r.totalRevenue || '0').toFixed(2))
     }));
   }
 
@@ -78,20 +78,20 @@ export class ReportService {
       .innerJoin('item.product', 'product')
       .leftJoin('product.category', 'category')
       .where('order.status != :cancelled', { cancelled: OrderStatus.CANCELLED })
-      .select('COALESCE(category.name, \'Uncategorized\')', 'categoryName')
-      .addSelect('COALESCE(category.id, \'none\')', 'categoryId')
-      .addSelect('SUM(item.quantity)', 'totalUnitsSold')
-      .addSelect('SUM(item.quantity * item.price)', 'totalRevenue')
+      .select('category.id', 'categoryId')
+      .addSelect('COALESCE(category.name, \'Uncategorized\')', 'categoryName')
+      .addSelect('COALESCE(SUM(item.quantity), 0)', 'totalUnitsSold')
+      .addSelect('COALESCE(SUM(item.quantity * item.price), 0)', 'totalRevenue')
       .groupBy('category.id')
       .addGroupBy('category.name')
       .orderBy('SUM(item.quantity * item.price)', 'DESC')
       .getRawMany();
 
     return result.map(r => ({
-      categoryId: r.categoryId,
-      categoryName: r.categoryName,
-      totalUnitsSold: parseInt(r.totalUnitsSold, 10),
-      totalRevenue: parseFloat(parseFloat(r.totalRevenue).toFixed(2))
+      categoryId: r.categoryId || 'none',
+      categoryName: r.categoryName || 'Uncategorized',
+      totalUnitsSold: parseInt(r.totalUnitsSold || '0', 10),
+      totalRevenue: parseFloat(parseFloat(r.totalRevenue || '0').toFixed(2))
     }));
   }
 }
