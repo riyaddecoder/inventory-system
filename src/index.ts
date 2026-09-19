@@ -12,11 +12,21 @@ import { errorHandler } from './middlewares/errorHandler';
 
 const app: Express = express();
 
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+  })
+);
 app.use(cors());
 app.use(express.json());
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// Root / home endpoint
+app.get('/', (req, res) => {
+  res.status(200).send('API working');
+});
+
+// Swagger Documentation endpoint
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 const startServer = async () => {
   try {
@@ -54,7 +64,6 @@ const startServer = async () => {
     const { default: routes } = await import('./routes');
     app.use('/api', routes);
 
-    // Error handler must be the last middleware
     app.use(errorHandler);
 
     await initializeQueues();

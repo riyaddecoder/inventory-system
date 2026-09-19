@@ -28,7 +28,7 @@ This will spin up PostgreSQL, Redis, and the Node.js application.
 docker-compose up --build
 ```
 The API will be available at `http://localhost:3000`.
-Swagger Documentation will be available at `http://localhost:3000/api-docs`.
+Swagger Documentation will be available at `http://localhost:3000/api/docs`.
 
 ### 2. Run Locally (Development)
 You need to have PostgreSQL and Redis instances running.
@@ -50,7 +50,7 @@ npm run dev
 
 ## API Documentation
 Once the server is running, visit:
-- **Swagger UI**: `http://localhost:3000/api-docs`
+- **Swagger UI**: `http://localhost:3000/api/docs`
 
 ## Features Explained
 

@@ -12,6 +12,11 @@ const options = {
     servers: [
       {
         url: `http://localhost:${env.PORT}`,
+        description: 'Local development server',
+      },
+      {
+        url: '/',
+        description: 'Current server',
       },
     ],
     components: {
@@ -29,7 +34,14 @@ const options = {
       },
     ],
   },
-  apis: ['./src/routes/*.ts', './src/controllers/*.ts'],
+  apis: [
+    './src/routes/*.ts',
+    './src/controllers/*.ts',
+    './src/index.ts',
+    './dist/routes/*.js',
+    './dist/controllers/*.js',
+    './dist/index.js',
+  ],
 };
 
 export const swaggerSpec = swaggerJSDoc(options);

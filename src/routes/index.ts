@@ -15,6 +15,19 @@ router.use(apiLimiter);
 
 /**
  * @swagger
+ * /api:
+ *   get:
+ *     summary: API root health check
+ *     responses:
+ *       200:
+ *         description: API working
+ */
+router.get('/', (req, res) => {
+  res.status(200).send('API working');
+});
+
+/**
+ * @swagger
  * /api/auth/register:
  *   post:
  *     summary: Register a new user
