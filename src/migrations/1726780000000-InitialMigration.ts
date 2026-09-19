@@ -4,8 +4,12 @@ export class InitialMigration1726780000000 implements MigrationInterface {
   name = 'InitialMigration1726780000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Enable uuid-ossp extension if available
-    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`);
+    // Enable uuid-ossp extension safely if permitted
+    try {
+      await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`);
+    } catch {
+      // Non-superuser on shared or cloud PostgreSQL may not have permissions
+    }
 
     // Create enum for order status
     await queryRunner.query(`

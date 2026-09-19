@@ -2,6 +2,14 @@ import { DataSource } from 'typeorm';
 import { env } from './env';
 import { InitialMigration1726780000000 } from '../migrations/1726780000000-InitialMigration';
 
+import { User } from '../entities/User';
+import { Category } from '../entities/Category';
+import { Product } from '../entities/Product';
+import { Inventory } from '../entities/Inventory';
+import { Order } from '../entities/Order';
+import { OrderItem } from '../entities/OrderItem';
+import { IdempotencyKey } from '../entities/IdempotencyKey';
+
 export const AppDataSource = new DataSource({
   type: 'postgres',
   host: env.DB_HOST,
@@ -11,7 +19,7 @@ export const AppDataSource = new DataSource({
   database: env.DB_NAME,
   synchronize: false, // In production-style setup, always use migrations
   logging: false,
-  entities: [__dirname + '/../entities/*.{ts,js}'],
+  entities: [User, Category, Product, Inventory, Order, OrderItem, IdempotencyKey],
   migrations: [InitialMigration1726780000000],
   subscribers: [],
 });
