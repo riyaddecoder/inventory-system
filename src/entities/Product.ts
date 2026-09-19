@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { Category } from './Category';
 import { Inventory } from './Inventory';
 
@@ -7,7 +7,8 @@ export class Product {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column()
+  @Index()
+  @Column('varchar')
   name!: string;
 
   @Column('text')
@@ -16,12 +17,14 @@ export class Product {
   @Column('decimal', { precision: 10, scale: 2 })
   price!: number;
 
-  @ManyToOne(() => Category, (category) => category.products)
+  @Index()
+  @ManyToOne(() => Category, (category) => category.products, { onDelete: 'SET NULL', nullable: true })
   category!: Category;
 
   @OneToOne(() => Inventory, (inventory) => inventory.product)
   inventory!: Inventory;
 
+  @Index()
   @CreateDateColumn()
   createdAt!: Date;
 

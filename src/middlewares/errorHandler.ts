@@ -20,12 +20,20 @@ export const errorHandler = (err: any, req: Request, res: Response, next: NextFu
     return res.status(StatusCodes.NOT_FOUND).json({ message: err.message });
   }
 
+  if (err.message && (err.message.includes('Forbidden') || err.message.includes('forbidden'))) {
+    return res.status(StatusCodes.FORBIDDEN).json({ message: err.message });
+  }
+
+  if (err.message && (err.message.includes('already cancelled') || err.message.includes('cannot be cancelled'))) {
+    return res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
+  }
+
   if (err.message && (err.message === 'User already exists' || err.message.includes('already exists'))) {
     return res.status(StatusCodes.CONFLICT).json({ message: err.message });
   }
 
   if (err.code === '23505' || (err.message && err.message.includes('duplicate key'))) {
-    return res.status(StatusCodes.CONFLICT).json({ message: 'User already exists' });
+    return res.status(StatusCodes.CONFLICT).json({ message: 'Resource already exists' });
   }
 
   if (err.message && err.message.includes('Insufficient stock')) {

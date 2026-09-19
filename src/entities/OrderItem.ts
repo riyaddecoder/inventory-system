@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Index } from 'typeorm';
 import { Order } from './Order';
 import { Product } from './Product';
 
@@ -7,13 +7,15 @@ export class OrderItem {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @ManyToOne(() => Order, (order) => order.items)
+  @Index()
+  @ManyToOne(() => Order, (order) => order.items, { onDelete: 'CASCADE' })
   order!: Order;
 
-  @ManyToOne(() => Product)
+  @Index()
+  @ManyToOne(() => Product, { onDelete: 'RESTRICT' })
   product!: Product;
 
-  @Column()
+  @Column('int')
   quantity!: number;
 
   @Column('decimal', { precision: 10, scale: 2 })

@@ -50,6 +50,8 @@ const startServer = async () => {
       try {
         await AppDataSource.initialize();
         console.log('Database connected successfully');
+        await AppDataSource.runMigrations();
+        console.log('Migrations executed successfully');
         break;
       } catch (err: any) {
         console.log(`Failed to connect to database. Retries left: ${retries - 1}`);

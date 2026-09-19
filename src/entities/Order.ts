@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { User } from './User';
 import { OrderItem } from './OrderItem';
 
@@ -15,9 +15,11 @@ export class Order {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @ManyToOne(() => User)
+  @Index()
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user!: User;
 
+  @Index()
   @Column({
     type: 'enum',
     enum: OrderStatus,
@@ -31,6 +33,7 @@ export class Order {
   @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
   items!: OrderItem[];
 
+  @Index()
   @CreateDateColumn()
   createdAt!: Date;
 

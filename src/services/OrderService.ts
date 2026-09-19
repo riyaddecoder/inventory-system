@@ -6,11 +6,20 @@ import { Inventory } from '../entities/Inventory';
 import { User } from '../entities/User';
 import { IdempotencyKey } from '../entities/IdempotencyKey';
 import { orderQueue } from '../queue/initializer';
+import { redisClient } from '../config/redis';
 
 interface CreateOrderPayload {
   userId: string;
   items: { productId: string; quantity: number }[];
   idempotencyKey?: string;
+}
+
+export interface GetOrdersFilter {
+  page?: number;
+  limit?: number;
+  status?: OrderStatus;
+  startDate?: string;
+  endDate?: string;
 }
 
 export class OrderService {
@@ -83,7 +92,15 @@ export class OrderService {
 
       await queryRunner.commitTransaction();
 
-      // Publish to queue asynchronously
+      // Invalidate caches
+      try {
+        const keys = await redisClient.keys('products:*');
+        if (keys.length > 0) await redisClient.del(keys);
+      } catch {
+        // Redis failover
+      }
+
+      // Publish to BullMQ queue asynchronously
       await orderQueue.add('order.created', { orderId: savedOrder.id, userId: payload.userId });
 
       return savedOrder;
@@ -95,18 +112,162 @@ export class OrderService {
     }
   }
 
+  async cancelOrder(orderId: string, userId: string, role: string) {
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction('SERIALIZABLE');
+
+    try {
+      const order = await queryRunner.manager.findOne(Order, {
+        where: { id: orderId },
+        relations: { user: true, items: { product: { inventory: true } } }
+      });
+
+      if (!order) {
+        throw new Error('Order not found');
+      }
+
+      if (order.user.id !== userId && role !== 'admin') {
+        throw new Error('Forbidden: Cannot cancel another user\'s order');
+      }
+
+      if (order.status === OrderStatus.CANCELLED) {
+        throw new Error('Order is already cancelled');
+      }
+
+      if (order.status === OrderStatus.DELIVERED) {
+        throw new Error('Delivered orders cannot be cancelled');
+      }
+
+      // Restore inventory stock using pessimistic write lock
+      for (const item of order.items) {
+        const inventory = await queryRunner.manager.createQueryBuilder(Inventory, 'inv')
+          .setLock('pessimistic_write')
+          .where('inv.productId = :productId', { productId: item.product.id })
+          .getOne();
+
+        if (inventory) {
+          inventory.quantity += item.quantity;
+          await queryRunner.manager.save(inventory);
+        }
+      }
+
+      order.status = OrderStatus.CANCELLED;
+      const updatedOrder = await queryRunner.manager.save(order);
+
+      await queryRunner.commitTransaction();
+
+      // Invalidate product caches
+      try {
+        const keys = await redisClient.keys('products:*');
+        if (keys.length > 0) await redisClient.del(keys);
+      } catch {
+        // Redis failover
+      }
+
+      // Publish event
+      await orderQueue.add('order.cancelled', { orderId: order.id, userId: order.user.id });
+
+      return updatedOrder;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async updateOrderStatus(orderId: string, status: OrderStatus, adminUserId: string) {
+    if (status === OrderStatus.CANCELLED) {
+      return this.cancelOrder(orderId, adminUserId, 'admin');
+    }
+
+    const order = await AppDataSource.getRepository(Order).findOne({
+      where: { id: orderId },
+      relations: { user: true, items: { product: true } }
+    });
+
+    if (!order) {
+      throw new Error('Order not found');
+    }
+
+    order.status = status;
+    const updated = await AppDataSource.getRepository(Order).save(order);
+
+    await orderQueue.add('order.status_updated', { orderId: updated.id, status });
+    return updated;
+  }
+
   async getOrder(id: string) {
     return AppDataSource.getRepository(Order).findOne({
       where: { id },
-      relations: { items: { product: true } }
+      relations: { user: true, items: { product: true } }
     });
   }
 
-  async getUserOrders(userId: string) {
-    return AppDataSource.getRepository(Order).find({
-      where: { user: { id: userId } },
-      relations: { items: { product: true } },
-      order: { createdAt: 'DESC' }
-    });
+  async getUserOrders(userId: string, filter: GetOrdersFilter = {}) {
+    const page = Math.max(1, filter.page || 1);
+    const limit = Math.max(1, Math.min(100, filter.limit || 10));
+
+    const qb = AppDataSource.getRepository(Order).createQueryBuilder('order')
+      .leftJoinAndSelect('order.items', 'items')
+      .leftJoinAndSelect('items.product', 'product')
+      .where('order.userId = :userId', { userId })
+      .orderBy('order.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    if (filter.status) {
+      qb.andWhere('order.status = :status', { status: filter.status });
+    }
+
+    const [orders, total] = await qb.getManyAndCount();
+
+    return {
+      data: orders,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
+  }
+
+  async getAllOrders(filter: GetOrdersFilter = {}) {
+    const page = Math.max(1, filter.page || 1);
+    const limit = Math.max(1, Math.min(100, filter.limit || 10));
+
+    const qb = AppDataSource.getRepository(Order).createQueryBuilder('order')
+      .leftJoinAndSelect('order.user', 'user')
+      .leftJoinAndSelect('order.items', 'items')
+      .leftJoinAndSelect('items.product', 'product')
+      .orderBy('order.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    if (filter.status) {
+      qb.andWhere('order.status = :status', { status: filter.status });
+    }
+
+    if (filter.startDate) {
+      qb.andWhere('order.createdAt >= :startDate', { startDate: new Date(filter.startDate) });
+    }
+
+    if (filter.endDate) {
+      qb.andWhere('order.createdAt <= :endDate', { endDate: new Date(filter.endDate) });
+    }
+
+    const [orders, total] = await qb.getManyAndCount();
+
+    return {
+      data: orders,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   }
 }
