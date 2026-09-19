@@ -11,6 +11,10 @@ const options = {
     },
     servers: [
       {
+        url: 'https://inventorymanager.sariyad.com',
+        description: 'Production server',
+      },
+      {
         url: `http://localhost:${env.PORT}`,
         description: 'Local development server',
       },
@@ -45,3 +49,4 @@ const options = {
 };
 
 export const swaggerSpec = swaggerJSDoc(options);
+
