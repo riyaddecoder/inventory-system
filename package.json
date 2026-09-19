@@ -4,11 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp run-migrations.js revert-migrations.js dist/",
     "start": "node dist/index.js",
     "dev": "concurrently \"tsc -w\" \"nodemon dist/index.js\"",
-    "migration:run": "typeorm migration:run -d dist/config/database.js",
-    "migration:revert": "typeorm migration:revert -d dist/config/database.js",
+    "migration:run": "node run-migrations.js",
+    "migration:revert": "node revert-migrations.js",
+    "prod:migration-run": "node run-migrations.js",
+    "prod:migration-revert": "node revert-migrations.js",
     "test": "tsx --test tests/api.test.ts"
   },
   "keywords": [],
