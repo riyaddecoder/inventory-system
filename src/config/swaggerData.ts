@@ -43,7 +43,20 @@ export const fallbackSwaggerSpec = {
         ],
         "responses": {
           "200": {
-            "description": "API working"
+            "description": "API working",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "API working"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }

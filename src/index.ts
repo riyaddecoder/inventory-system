@@ -22,7 +22,7 @@ app.use(express.json());
 
 // Root / home endpoint
 app.get('/', (req, res) => {
-  res.status(200).send('API working');
+  res.status(200).json({ message: 'API working' });
 });
 
 // Swagger Documentation endpoint

@@ -30,9 +30,17 @@ router.use(apiLimiter);
  *     responses:
  *       200:
  *         description: API working
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: API working
  */
 router.get('/', (req, res) => {
-  res.status(200).send('API working');
+  res.status(200).json({ message: 'API working' });
 });
 
 /* =========================================================================

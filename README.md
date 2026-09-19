@@ -50,9 +50,10 @@ This spins up PostgreSQL, Redis, and the Node.js application. Database migration
 docker-compose up --build
 ```
 
-- API Base URL: `http://localhost:3000`
-- Swagger UI Documentation: `http://localhost:3000/api/docs`
-- Health Check: `http://localhost:3000/` (returns `"API working"`)
+- API Base URL: `http://localhost:3000` (Production: `https://inventorymanager.sariyad.com`)
+- Swagger UI Documentation: `http://localhost:3000/api/docs` (or `https://inventorymanager.sariyad.com/api/docs`)
+- Health Check: `GET /api` (or `GET /`) returns JSON `{"message": "API working"}`
+- Uniform JSON Responses: All API endpoints strictly return `application/json` responses.
 
 ### 2. Run Locally (Development)
 
@@ -199,7 +200,17 @@ Background tasks are decoupled from request-response cycles using **BullMQ**:
 ## API Documentation & Sample Requests
 
 OpenAPI / Swagger interactive documentation is accessible at:
-`http://localhost:3000/api/docs`
+`http://localhost:3000/api/docs` (or `https://inventorymanager.sariyad.com/api/docs`)
+
+### Uniform API Structure & JSON Standards
+- **Base Route**: Every API endpoint is strictly based under `/api/...`
+- **JSON Format**: All success and error responses strictly adhere to JSON (`application/json`).
+- **Health Check Endpoint**: `GET /api` (and `GET /`) returns:
+  ```json
+  {
+    "message": "API working"
+  }
+  ```
 
 ### Sample Endpoints:
 

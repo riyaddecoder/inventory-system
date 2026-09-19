@@ -8,6 +8,7 @@ const memoryLimiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
+  message: { message: 'Too many requests, please try again later.' },
 });
 
 let redisLimiterInstance: any = null;
@@ -19,6 +20,7 @@ function getRedisLimiter() {
       max: 100,
       standardHeaders: true,
       legacyHeaders: false,
+      message: { message: 'Too many requests, please try again later.' },
       store: new RedisStore({
         sendCommand: (...args: string[]) => redisClient.sendCommand(args),
       }),

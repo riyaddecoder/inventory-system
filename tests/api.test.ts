@@ -18,9 +18,12 @@ describe('Assessment 2 - High-Performance Order Processing & Inventory API Tests
   app.use(cors());
   app.use(express.json());
 
-  // Root endpoint
+  // Root endpoint (returns JSON)
   app.get('/', (req, res) => {
-    res.status(200).send('API working');
+    res.status(200).json({ message: 'API working' });
+  });
+  app.get('/api', (req, res) => {
+    res.status(200).json({ message: 'API working' });
   });
 
   // Swagger Documentation
@@ -104,10 +107,16 @@ describe('Assessment 2 - High-Performance Order Processing & Inventory API Tests
   /* =========================================================================
      1. ROOT & SWAGGER DOCUMENTATION TESTS
      ========================================================================= */
-  test('1.1 GET / should return 200 and say "API working"', async () => {
-    const res = await request(app).get('/');
-    assert.strictEqual(res.status, 200);
-    assert.strictEqual(res.text, 'API working');
+  test('1.1 GET / and GET /api should return 200 JSON with "API working"', async () => {
+    const res1 = await request(app).get('/');
+    assert.strictEqual(res1.status, 200);
+    assert.strictEqual(res1.body.message, 'API working');
+    assert.match(res1.headers['content-type'], /json/);
+
+    const res2 = await request(app).get('/api');
+    assert.strictEqual(res2.status, 200);
+    assert.strictEqual(res2.body.message, 'API working');
+    assert.match(res2.headers['content-type'], /json/);
   });
 
   test('1.2 GET /api/docs/ should serve Swagger documentation UI', async () => {
