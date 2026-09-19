@@ -1,5 +1,7 @@
 import swaggerJSDoc from 'swagger-jsdoc';
+import path from 'path';
 import { env } from './env';
+import { fallbackSwaggerSpec } from './swaggerData';
 
 const options = {
   definition: {
@@ -39,14 +41,31 @@ const options = {
     ],
   },
   apis: [
+    path.join(__dirname, '../routes/*.{ts,js}'),
+    path.join(__dirname, '../controllers/*.{ts,js}'),
+    path.join(__dirname, '../index.{ts,js}'),
     './src/routes/*.ts',
     './src/controllers/*.ts',
-    './src/index.ts',
     './dist/routes/*.js',
     './dist/controllers/*.js',
-    './dist/index.js',
   ],
 };
 
-export const swaggerSpec = swaggerJSDoc(options);
+let spec: any;
+try {
+  spec = swaggerJSDoc(options);
+} catch {
+  spec = {};
+}
+
+// Fallback to in-memory precompiled swagger spec if dynamic file resolution found 0 paths
+if (!spec || !spec.paths || Object.keys(spec.paths).length === 0) {
+  spec = fallbackSwaggerSpec;
+}
+
+if (spec) {
+  spec.servers = options.definition.servers;
+}
+
+export const swaggerSpec = spec;
 
