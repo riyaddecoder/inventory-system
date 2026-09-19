@@ -86,9 +86,23 @@ docker-compose up --build
 ### Migrations
 Database schema synchronization (`synchronize: true`) is disabled in favor of versioned TypeORM migrations located in `src/migrations/`.
 
-- **Run Migrations**: `npm run migration:run`
-- **Revert Migrations**: `npm run migration:revert`
-- **Automatic Migration**: The server executes `AppDataSource.runMigrations()` on startup before opening HTTP listeners.
+- **Run Migrations (Development / Standard)**:
+  ```bash
+  npm run migration:run
+  ```
+- **Run Migrations in Production (from project root)**:
+  ```bash
+  npm run prod:migration-run
+  ```
+- **Run Migrations from `dist/` folder (Production)**:
+  ```bash
+  cd dist && node run-migrations.js
+  ```
+- **Revert Migrations**:
+  ```bash
+  npm run prod:migration-revert
+  ```
+- **Automatic Migration**: The server also executes `AppDataSource.runMigrations()` on startup before opening HTTP listeners.
 
 ### Entity Relationship Diagram (ERD)
 

@@ -16,12 +16,12 @@ for (const envPath of envPaths) {
 }
 
 const candidates = [
-  path.resolve(__dirname, 'config/database.js'),
   path.resolve(__dirname, 'dist/config/database.js'),
-  path.resolve(__dirname, '../config/database.js'),
+  path.resolve(__dirname, 'config/database.js'),
   path.resolve(__dirname, '../dist/config/database.js'),
-  path.resolve(process.cwd(), 'config/database.js'),
+  path.resolve(__dirname, '../config/database.js'),
   path.resolve(process.cwd(), 'dist/config/database.js'),
+  path.resolve(process.cwd(), 'config/database.js'),
 ];
 
 let dbConfigPath = null;

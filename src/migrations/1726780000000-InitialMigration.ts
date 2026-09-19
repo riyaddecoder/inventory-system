@@ -4,13 +4,6 @@ export class InitialMigration1726780000000 implements MigrationInterface {
   name = 'InitialMigration1726780000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Enable uuid-ossp extension safely if permitted
-    try {
-      await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`);
-    } catch {
-      // Non-superuser on shared or cloud PostgreSQL may not have permissions
-    }
-
     // Create enum for order status
     await queryRunner.query(`
       DO $$ BEGIN
@@ -23,7 +16,7 @@ export class InitialMigration1726780000000 implements MigrationInterface {
     // Create users table
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "users" (
-        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
         "email" character varying NOT NULL,
         "password" character varying NOT NULL,
         "role" character varying NOT NULL DEFAULT 'customer',
@@ -37,7 +30,7 @@ export class InitialMigration1726780000000 implements MigrationInterface {
     // Create categories table
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "categories" (
-        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
         "name" character varying NOT NULL,
         "description" text,
         "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
@@ -51,7 +44,7 @@ export class InitialMigration1726780000000 implements MigrationInterface {
     // Create products table
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "products" (
-        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
         "name" character varying NOT NULL,
         "description" text NOT NULL,
         "price" numeric(10,2) NOT NULL,
@@ -69,7 +62,7 @@ export class InitialMigration1726780000000 implements MigrationInterface {
     // Create inventories table
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "inventories" (
-        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
         "quantity" integer NOT NULL DEFAULT 0,
         "reservedQuantity" integer NOT NULL DEFAULT 0,
         "lowStockThreshold" integer NOT NULL DEFAULT 5,
@@ -86,7 +79,7 @@ export class InitialMigration1726780000000 implements MigrationInterface {
     // Create orders table
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "orders" (
-        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
         "userId" uuid NOT NULL,
         "status" "public"."orders_status_enum" NOT NULL DEFAULT 'pending',
         "totalAmount" numeric(10,2) NOT NULL,
@@ -103,7 +96,7 @@ export class InitialMigration1726780000000 implements MigrationInterface {
     // Create order_items table
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "order_items" (
-        "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+        "id" uuid NOT NULL DEFAULT gen_random_uuid(),
         "orderId" uuid NOT NULL,
         "productId" uuid NOT NULL,
         "quantity" integer NOT NULL,

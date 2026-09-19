@@ -16,14 +16,14 @@ for (const envPath of envPaths) {
   }
 }
 
-// Try finding database.js across possible working directories (root, dist, etc.)
+// Try finding database.js across possible working directories (dist, root, parent, etc.)
 const candidates = [
-  path.resolve(__dirname, 'config/database.js'),
   path.resolve(__dirname, 'dist/config/database.js'),
-  path.resolve(__dirname, '../config/database.js'),
+  path.resolve(__dirname, 'config/database.js'),
   path.resolve(__dirname, '../dist/config/database.js'),
-  path.resolve(process.cwd(), 'config/database.js'),
+  path.resolve(__dirname, '../config/database.js'),
   path.resolve(process.cwd(), 'dist/config/database.js'),
+  path.resolve(process.cwd(), 'config/database.js'),
 ];
 
 let dbConfigPath = null;
