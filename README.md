@@ -1,21 +1,66 @@
 # High-Performance Order Processing & Inventory API
 
+> **Live API Docs:** [**https://inventorymanager.sariyad.com/api/docs/**](https://inventorymanager.sariyad.com/api/docs/)
+>
+> **Test Credentials:** `admin@example.com` / `password123` (admin) &nbsp;·&nbsp; `user@example.com` / `password123` (customer)
+
 A production-style e-commerce backend built with **Node.js**, **Express**, **TypeScript**, **PostgreSQL**, and **Redis**. Designed to handle high-concurrency order processing, prevent overselling, maintain strict idempotency, and provide real-time inventory tracking and reporting.
 
 ---
 
+## Production Links
+
+| Resource | URL |
+| :--- | :--- |
+| **API Documentation (Swagger UI)** | [**https://inventorymanager.sariyad.com/api/docs/**](https://inventorymanager.sariyad.com/api/docs/) |
+| **API Base URL** | [https://inventorymanager.sariyad.com](https://inventorymanager.sariyad.com) |
+| **Health Check** | [https://inventorymanager.sariyad.com/api](https://inventorymanager.sariyad.com/api) |
+
+> **Production Docs URL:** [**https://inventorymanager.sariyad.com/api/docs/**](https://inventorymanager.sariyad.com/api/docs/) — click the link to open the interactive Swagger UI and explore/execute every endpoint live.
+
+---
+
+## Test Credentials
+
+The following accounts are pre-seeded on the live deployment and can be used to authenticate immediately:
+
+| Role | Email | Password |
+| :--- | :--- | :--- |
+| **Admin** | `admin@example.com` | `password123` |
+| **Customer** | `user@example.com` | `password123` |
+
+```bash
+ADMIN_EMAIL="admin@example.com"
+ADMIN_PASSWORD="password123"
+
+USER_EMAIL="user@example.com"
+USER_PASSWORD="password123"
+```
+
+Quick login example (Admin):
+
+```bash
+curl -X POST https://inventorymanager.sariyad.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@example.com", "password": "password123"}'
+```
+
+---
+
 ## Table of Contents
-1. [Architecture & Tech Stack](#architecture--tech-stack)
-2. [Prerequisites](#prerequisites)
-3. [Setup & Execution](#setup--execution)
-4. [Database Migrations & Schema](#database-migrations--schema)
-5. [Concurrency & Overselling Prevention](#concurrency--overselling-prevention)
-6. [Idempotency & Retry-Safety](#idempotency--retry-safety)
-7. [Caching Strategy & Invalidation](#caching-strategy--invalidation)
-8. [Database Optimization & Indexing](#database-optimization--indexing)
-9. [Asynchronous Queues & Event Processing](#asynchronous-queues--event-processing)
-10. [API Documentation & Sample Requests](#api-documentation--sample-requests)
-11. [Testing](#testing)
+1. [Production Links](#production-links)
+2. [Test Credentials](#test-credentials)
+3. [Architecture & Tech Stack](#architecture--tech-stack)
+4. [Prerequisites](#prerequisites)
+5. [Setup & Execution](#setup--execution)
+6. [Database Migrations & Schema](#database-migrations--schema)
+7. [Concurrency & Overselling Prevention](#concurrency--overselling-prevention)
+8. [Idempotency & Retry-Safety](#idempotency--retry-safety)
+9. [Caching Strategy & Invalidation](#caching-strategy--invalidation)
+10. [Database Optimization & Indexing](#database-optimization--indexing)
+11. [Asynchronous Queues & Event Processing](#asynchronous-queues--event-processing)
+12. [API Documentation & Sample Requests](#api-documentation--sample-requests)
+13. [Testing](#testing)
 
 ---
 
@@ -50,8 +95,9 @@ This spins up PostgreSQL, Redis, and the Node.js application. Database migration
 docker-compose up --build
 ```
 
-- API Base URL: `http://localhost:3000` (Production: `https://inventorymanager.sariyad.com`)
-- Swagger UI Documentation: `http://localhost:3000/api/docs` (or `https://inventorymanager.sariyad.com/api/docs`)
+- API Base URL: [http://localhost:3000](http://localhost:3000) (Production: [https://inventorymanager.sariyad.com](https://inventorymanager.sariyad.com))
+- Swagger UI Documentation: [http://localhost:3000/api/docs](http://localhost:3000/api/docs) (Production: [**https://inventorymanager.sariyad.com/api/docs/**](https://inventorymanager.sariyad.com/api/docs/))
+- **Test Credentials**: `admin@example.com` / `password123` (Admin) · `user@example.com` / `password123` (Customer)
 - Health Check: `GET /api` (or `GET /`) returns JSON `{"message": "API working"}`
 - Uniform JSON Responses: All API endpoints strictly return `application/json` responses.
 
@@ -214,7 +260,11 @@ Background tasks are decoupled from request-response cycles using **BullMQ**:
 ## API Documentation & Sample Requests
 
 OpenAPI / Swagger interactive documentation is accessible at:
-`http://localhost:3000/api/docs` (or `https://inventorymanager.sariyad.com/api/docs`)
+
+- **Production:** [**https://inventorymanager.sariyad.com/api/docs/**](https://inventorymanager.sariyad.com/api/docs/)
+- **Local:** [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
+
+**Test Credentials:** `admin@example.com` / `password123` (Admin) · `user@example.com` / `password123` (Customer)
 
 ### Uniform API Structure & JSON Standards
 - **Base Route**: Every API endpoint is strictly based under `/api/...`
