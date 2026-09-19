@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts"
+    "dev": "concurrently \"tsc -w\" \"nodemon dist/index.js\"",
+    "test": "jest"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +22,7 @@
     "express-rate-limit": "^8.7.0",
     "helmet": "^8.3.0",
     "http-status-codes": "^2.3.0",
+    "ioredis": "^5.11.1",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.23.0",
     "rate-limit-redis": "^6.0.1",
@@ -41,10 +43,14 @@
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.8",
     "@types/uuid": "^10.0.0",
+    "concurrently": "^10.0.5",
     "eslint": "^10.11.0",
+    "nodemon": "^3.1.14",
     "prettier": "^3.9.8",
     "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
+    "tsc-watch": "^7.2.1",
+    "tsx": "^4.23.13",
     "typescript": "^7.0.2"
   }
 }
