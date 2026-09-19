@@ -46,6 +46,8 @@ router.get('/', (req, res) => {
  *     responses:
  *       201:
  *         description: User created
+ *       409:
+ *         description: User already exists
  */
 router.post('/auth/register', authController.register);
 
