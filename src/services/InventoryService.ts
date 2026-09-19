@@ -2,7 +2,7 @@ import { AppDataSource } from '../config/database';
 import { Inventory } from '../entities/Inventory';
 import { Product } from '../entities/Product';
 import { redisClient } from '../config/redis';
-import { orderQueue } from '../queue/initializer';
+import { addQueueJob } from '../queue/initializer';
 
 export class InventoryService {
   private inventoryRepository = AppDataSource.getRepository(Inventory);
@@ -64,17 +64,19 @@ export class InventoryService {
       await queryRunner.commitTransaction();
 
       // Invalidate Redis caches
-      try {
-        await redisClient.del(`product:${productId}`);
-        const keys = await redisClient.keys('products:*');
-        if (keys.length > 0) await redisClient.del(keys);
-      } catch {
-        // Redis failover
+      if (redisClient.isOpen) {
+        try {
+          await redisClient.del(`product:${productId}`);
+          const keys = await redisClient.keys('products:*');
+          if (keys.length > 0) await redisClient.del(keys);
+        } catch {
+          // Redis failover
+        }
       }
 
       // Check if low stock event should trigger
       if (saved.quantity <= saved.lowStockThreshold) {
-        await orderQueue.add('inventory.low_stock', {
+        await addQueueJob('inventory.low_stock', {
           productId,
           currentStock: saved.quantity,
           threshold: saved.lowStockThreshold

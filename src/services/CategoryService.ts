@@ -20,23 +20,27 @@ export class CategoryService {
 
   async getCategories(): Promise<Category[]> {
     const cacheKey = 'categories:all';
-    try {
-      const cached = await redisClient.get(cacheKey);
-      if (cached) {
-        return JSON.parse(cached);
+    if (redisClient.isOpen) {
+      try {
+        const cached = await redisClient.get(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+      } catch {
+        // Redis failover
       }
-    } catch {
-      // Redis failover
     }
 
     const categories = await this.categoryRepository.find({
       order: { name: 'ASC' }
     });
 
-    try {
-      await redisClient.set(cacheKey, JSON.stringify(categories), { EX: 120 });
-    } catch {
-      // Redis failover
+    if (redisClient.isOpen) {
+      try {
+        await redisClient.set(cacheKey, JSON.stringify(categories), { EX: 120 });
+      } catch {
+        // Redis failover
+      }
     }
 
     return categories;
@@ -82,18 +86,20 @@ export class CategoryService {
   }
 
   private async invalidateCache(): Promise<void> {
-    try {
-      const keys = await redisClient.keys('categories:*');
-      if (keys.length > 0) {
-        await redisClient.del(keys);
+    if (redisClient.isOpen) {
+      try {
+        const keys = await redisClient.keys('categories:*');
+        if (keys.length > 0) {
+          await redisClient.del(keys);
+        }
+        // Invalidate products list caches too
+        const productKeys = await redisClient.keys('products:*');
+        if (productKeys.length > 0) {
+          await redisClient.del(productKeys);
+        }
+      } catch {
+        // Redis failover
       }
-      // Invalidate products list caches too
-      const productKeys = await redisClient.keys('products:*');
-      if (productKeys.length > 0) {
-        await redisClient.del(productKeys);
-      }
-    } catch {
-      // Redis failover
     }
   }
 }

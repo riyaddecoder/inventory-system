@@ -5,7 +5,7 @@ import { Product } from '../entities/Product';
 import { Inventory } from '../entities/Inventory';
 import { User } from '../entities/User';
 import { IdempotencyKey } from '../entities/IdempotencyKey';
-import { orderQueue } from '../queue/initializer';
+import { addQueueJob } from '../queue/initializer';
 import { redisClient } from '../config/redis';
 
 interface CreateOrderPayload {
@@ -93,15 +93,17 @@ export class OrderService {
       await queryRunner.commitTransaction();
 
       // Invalidate caches
-      try {
-        const keys = await redisClient.keys('products:*');
-        if (keys.length > 0) await redisClient.del(keys);
-      } catch {
-        // Redis failover
+      if (redisClient.isOpen) {
+        try {
+          const keys = await redisClient.keys('products:*');
+          if (keys.length > 0) await redisClient.del(keys);
+        } catch {
+          // Redis failover
+        }
       }
 
-      // Publish to BullMQ queue asynchronously
-      await orderQueue.add('order.created', { orderId: savedOrder.id, userId: payload.userId });
+      // Publish to BullMQ queue asynchronously (or fallback)
+      await addQueueJob('order.created', { orderId: savedOrder.id, userId: payload.userId });
 
       return savedOrder;
     } catch (error) {
@@ -158,15 +160,17 @@ export class OrderService {
       await queryRunner.commitTransaction();
 
       // Invalidate product caches
-      try {
-        const keys = await redisClient.keys('products:*');
-        if (keys.length > 0) await redisClient.del(keys);
-      } catch {
-        // Redis failover
+      if (redisClient.isOpen) {
+        try {
+          const keys = await redisClient.keys('products:*');
+          if (keys.length > 0) await redisClient.del(keys);
+        } catch {
+          // Redis failover
+        }
       }
 
       // Publish event
-      await orderQueue.add('order.cancelled', { orderId: order.id, userId: order.user.id });
+      await addQueueJob('order.cancelled', { orderId: order.id, userId: order.user.id });
 
       return updatedOrder;
     } catch (error) {
@@ -194,7 +198,7 @@ export class OrderService {
     order.status = status;
     const updated = await AppDataSource.getRepository(Order).save(order);
 
-    await orderQueue.add('order.status_updated', { orderId: updated.id, status });
+    await addQueueJob('order.status_updated', { orderId: updated.id, status });
     return updated;
   }
 

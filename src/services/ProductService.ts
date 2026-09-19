@@ -29,13 +29,15 @@ export class ProductService {
 
     const cacheKey = `products:p${page}:l${limit}:q${params.q || ''}:c${params.categoryId || ''}:min${params.minPrice || ''}:max${params.maxPrice || ''}:stk${params.inStock ?? ''}:sb${sortBy}:so${sortOrder}`;
 
-    try {
-      const cachedData = await redisClient.get(cacheKey);
-      if (cachedData) {
-        return JSON.parse(cachedData);
+    if (redisClient.isOpen) {
+      try {
+        const cachedData = await redisClient.get(cacheKey);
+        if (cachedData) {
+          return JSON.parse(cachedData);
+        }
+      } catch {
+        // Redis failover
       }
-    } catch {
-      // Redis failover
     }
 
     const queryBuilder = this.productRepository.createQueryBuilder('product')
@@ -86,10 +88,12 @@ export class ProductService {
       }
     };
 
-    try {
-      await redisClient.set(cacheKey, JSON.stringify(result), { EX: 60 });
-    } catch {
-      // Redis failover
+    if (redisClient.isOpen) {
+      try {
+        await redisClient.set(cacheKey, JSON.stringify(result), { EX: 60 });
+      } catch {
+        // Redis failover
+      }
     }
 
     return result;
@@ -98,13 +102,15 @@ export class ProductService {
   async getProductById(id: string): Promise<Product> {
     const cacheKey = `product:${id}`;
 
-    try {
-      const cachedData = await redisClient.get(cacheKey);
-      if (cachedData) {
-        return JSON.parse(cachedData);
+    if (redisClient.isOpen) {
+      try {
+        const cachedData = await redisClient.get(cacheKey);
+        if (cachedData) {
+          return JSON.parse(cachedData);
+        }
+      } catch {
+        // Redis failover
       }
-    } catch {
-      // Redis failover
     }
 
     const product = await this.productRepository.findOne({
@@ -116,10 +122,12 @@ export class ProductService {
       throw new Error('Product not found');
     }
 
-    try {
-      await redisClient.set(cacheKey, JSON.stringify(product), { EX: 60 });
-    } catch {
-      // Redis failover
+    if (redisClient.isOpen) {
+      try {
+        await redisClient.set(cacheKey, JSON.stringify(product), { EX: 60 });
+      } catch {
+        // Redis failover
+      }
     }
 
     return product;
@@ -186,16 +194,18 @@ export class ProductService {
   }
 
   async invalidateCaches(productId?: string): Promise<void> {
-    try {
-      if (productId) {
-        await redisClient.del(`product:${productId}`);
+    if (redisClient.isOpen) {
+      try {
+        if (productId) {
+          await redisClient.del(`product:${productId}`);
+        }
+        const keys = await redisClient.keys('products:*');
+        if (keys.length > 0) {
+          await redisClient.del(keys);
+        }
+      } catch {
+        // Redis failover
       }
-      const keys = await redisClient.keys('products:*');
-      if (keys.length > 0) {
-        await redisClient.del(keys);
-      }
-    } catch {
-      // Redis failover
     }
   }
 }

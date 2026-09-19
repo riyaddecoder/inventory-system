@@ -246,4 +246,31 @@ describe('Assessment 2 - High-Performance Order Processing & Inventory API Tests
     assert.strictEqual(res.status, 409);
     assert.strictEqual(res.body.message, 'Resource already exists');
   });
+
+  /* =========================================================================
+     7. REDIS RESILIENCE & OFFLINE FALLBACK TESTS
+     ========================================================================= */
+  test('7.1 connectRedis does not throw error when Redis is offline', async () => {
+    const { connectRedis } = await import('../src/config/redis');
+    const result = await connectRedis();
+    assert.strictEqual(typeof result, 'boolean');
+  });
+
+  test('7.2 addQueueJob executes gracefully in fallback mode when Redis is offline', async () => {
+    const { addQueueJob } = await import('../src/queue/initializer');
+    await assert.doesNotReject(async () => {
+      await addQueueJob('order.created', { orderId: 'test-order-id', userId: 'test-user-id' });
+    });
+  });
+
+  test('7.3 apiLimiter operates and allows requests when Redis is offline', async () => {
+    const { apiLimiter } = await import('../src/middlewares/rateLimiter');
+    const limiterApp = express();
+    limiterApp.use(apiLimiter);
+    limiterApp.get('/test-limit', (req, res) => res.status(200).send('ok'));
+
+    const res = await request(limiterApp).get('/test-limit');
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.text, 'ok');
+  });
 });
